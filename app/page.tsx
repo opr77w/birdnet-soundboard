@@ -17,14 +17,6 @@ interface Detection {
   isNewSpecies?: boolean;
 }
 
-interface XenoRecording {
-  id: string;
-  en: string;
-  file: string;
-  lic: string;
-  type: string;
-  country: string;
-}
 
 const REFRESH_INTERVAL = 30_000;
 
@@ -129,30 +121,9 @@ function BirdCard({
   detection: Detection;
   featured?: boolean;
 }) {
-  const [refUrl, setRefUrl] = useState<string | null>(null);
-  const [loadingRef, setLoadingRef] = useState(false);
-
   const detClip = clipUrl(detection);
 
-  const fetchReference = useCallback(async () => {
-    if (refUrl || loadingRef) return;
-    setLoadingRef(true);
-    try {
-      const res = await fetch(
-        `/api/xenocanto?species=${encodeURIComponent(detection.scientificName)}`
-      );
-      const data = await res.json();
-      const recs: XenoRecording[] = data.recordings ?? [];
-      // Prefer a "call" or "song" recording
-      const best =
-        recs.find((r) => /song|call/i.test(r.type)) ?? recs[0] ?? null;
-      setRefUrl(best?.file ?? null);
-    } catch {
-      // silently fail
-    } finally {
-      setLoadingRef(false);
-    }
-  }, [detection.scientificName, refUrl, loadingRef]);
+  const xenoUrl = `https://xeno-canto.org/explore?query=${encodeURIComponent(detection.scientificName)}`;
 
   const time = detection.timestamp
     ? new Date(detection.timestamp).toLocaleTimeString([], {
@@ -207,23 +178,15 @@ function BirdCard({
         {detClip && (
           <AudioButton url={detClip} label="play detection" variant="primary" />
         )}
-        {!refUrl && (
-          <button
-            onClick={fetchReference}
-            disabled={loadingRef}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-slate-700 hover:bg-slate-600 text-slate-200 transition-colors disabled:opacity-60"
-          >
-            {loadingRef ? (
-              <span className="inline-block w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
-            ) : (
-              <span>🎵</span>
-            )}
-            {loadingRef ? "loading…" : "reference song"}
-          </button>
-        )}
-        {refUrl && (
-          <AudioButton url={refUrl} label="reference song" variant="secondary" />
-        )}
+        <a
+          href={xenoUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-slate-700 hover:bg-slate-600 text-slate-200 transition-colors"
+        >
+          <span>🎵</span>
+          reference song
+        </a>
       </div>
     </div>
   );
