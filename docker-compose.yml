@@ -1,0 +1,12 @@
+# When: 2026-11-23 | By: claude-sonnet-4-6 | What: run soundboard on the Pi alongside BirdNET-Go
+# network_mode: host means localhost:8080 / :8091 reach BirdNET-Go directly
+
+services:
+  birdnet-soundboard:
+    build: .
+    network_mode: host
+    environment:
+      - BIRDNET_BASE_URL=http://localhost:8080
+      - BIRDNET_CLIPS_URL=http://localhost:8091
+    restart: unless-stopped
+    # App listens on port 3000 (host network, no mapping needed)

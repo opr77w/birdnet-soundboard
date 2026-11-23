@@ -26,15 +26,13 @@ interface XenoRecording {
   country: string;
 }
 
-const CLIPS_BASE_URL =
-  process.env.NEXT_PUBLIC_CLIPS_BASE_URL ?? "http://localhost:8091";
 const REFRESH_INTERVAL = 30_000;
 
+// Route audio through the Next.js clips proxy so it works from any client network
 function clipUrl(detection: Detection): string | null {
   if (!detection.clipName) return null;
-  // Format: {CLIPS_BASE_URL}/{YYYY}/{MM}/{clipName}
   const [year, month] = detection.date.split("-");
-  return `${CLIPS_BASE_URL}/${year}/${month}/${detection.clipName}`;
+  return `/api/clips/${year}/${month}/${detection.clipName}`;
 }
 
 function confidencePct(c: number): string {
