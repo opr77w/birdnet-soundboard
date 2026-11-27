@@ -23,7 +23,7 @@ export async function GET(req: NextRequest) {
 
   const url =
     `https://xeno-canto.org/api/3/recordings` +
-    `?query=${encodeURIComponent(q)}` +
+    `?query=${encodeURIComponent(`sp:"${q}"`)}` +
     `&key=${apiKey}`;
 
   try {
