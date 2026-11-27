@@ -364,12 +364,12 @@ export default function Home() {
       <div className="mt-12 text-center text-slate-600 text-xs">
         Auto-refreshes every 30 s · Reference songs from{" "}
         <a
-          href="https://www.inaturalist.org"
+          href="https://xeno-canto.org"
           target="_blank"
           rel="noopener noreferrer"
           className="underline hover:text-slate-400"
         >
-          iNaturalist
+          xeno-canto
         </a>
       </div>
     </main>

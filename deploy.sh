@@ -20,6 +20,7 @@ docker run -d \
   -v /mnt/birdnet-go/external/clips:/clips:ro \
   -e BIRDNET_BASE_URL=http://localhost:8080 \
   -e BIRDNET_CLIPS_DIR=/clips \
+  ${XENOCANTO_API_KEY:+-e XENOCANTO_API_KEY="$XENOCANTO_API_KEY"} \
   birdnet-soundboard
 
 echo "Done. Soundboard running at http://$(hostname -I | awk '{print $1}'):3000"

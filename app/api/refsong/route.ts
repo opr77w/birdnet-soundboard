@@ -1,40 +1,43 @@
-// When: 2026-11-27 | By: claude-sonnet-4-6 | What: proxy iNaturalist for bird reference recordings (no API key required)
+// When: 2026-11-27 | By: claude-sonnet-4-6 | What: proxy xeno-canto v3 for bird reference recordings
 import { NextRequest, NextResponse } from "next/server";
 
-interface iNatSound {
-  file_url: string;
-  file_content_type: string;
-  attribution: string;
-  license_code: string;
+interface XCRecording {
+  file: string;
+  "file-name": string;
+  en: string;
+  rec: string;
+  lic: string;
 }
 
-interface iNatObs {
-  sounds?: iNatSound[];
+interface XCResponse {
+  recordings: XCRecording[];
+  numRecordings: string;
 }
 
 export async function GET(req: NextRequest) {
   const q = req.nextUrl.searchParams.get("q");
   if (!q) return NextResponse.json(null, { status: 400 });
 
+  const apiKey = process.env.XENOCANTO_API_KEY;
+  if (!apiKey) return NextResponse.json(null, { status: 503 });
+
   const url =
-    `https://api.inaturalist.org/v1/observations` +
-    `?taxon_name=${encodeURIComponent(q)}` +
-    `&sounds=true&quality_grade=research&per_page=1&order_by=votes`;
+    `https://xeno-canto.org/api/3/recordings` +
+    `?query=${encodeURIComponent(q)}` +
+    `&key=${apiKey}`;
 
   try {
     const res = await fetch(url, { next: { revalidate: 86400 } });
     if (!res.ok) return NextResponse.json(null, { status: 502 });
 
-    const data = await res.json();
-    const sound: iNatSound | undefined = (data.results as iNatObs[])?.[0]
-      ?.sounds?.[0];
-    if (!sound?.file_url) return NextResponse.json(null, { status: 404 });
+    const data: XCResponse = await res.json();
+    const rec = data.recordings?.[0];
+    if (!rec?.file) return NextResponse.json(null, { status: 404 });
 
     return NextResponse.json({
-      url: sound.file_url,
-      contentType: sound.file_content_type,
-      attribution: sound.attribution,
-      license: sound.license_code,
+      url: rec.file,
+      attribution: `${rec.rec} / xeno-canto`,
+      license: rec.lic,
     });
   } catch {
     return NextResponse.json(null, { status: 502 });
