@@ -1,4 +1,4 @@
-// When: 2026-11-23 | By: claude-sonnet-4-6 | What: BirdNET-Go soundboard — latest detections with playback
+// When: 2026-11-27 | By: claude-sonnet-4-6 | What: BirdNET-Go soundboard — latest detections with playback
 "use client";
 
 import { useEffect, useState, useRef, useCallback } from "react";
@@ -113,6 +113,72 @@ function AudioButton({
   );
 }
 
+// When: 2026-11-27 | By: claude-sonnet-4-6 | What: lazy-load reference recording from iNaturalist on first click
+function RefAudioButton({ scientificName }: { scientificName: string }) {
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [playing, setPlaying] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [notFound, setNotFound] = useState(false);
+  const resolvedUrl = useRef<string | null>(null);
+
+  const toggle = useCallback(async () => {
+    if (notFound) return;
+
+    if (playing && audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+      setPlaying(false);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      if (!resolvedUrl.current) {
+        const res = await fetch(
+          `/api/refsong?q=${encodeURIComponent(scientificName)}`
+        );
+        if (!res.ok) { setNotFound(true); return; }
+        const data = await res.json();
+        if (!data?.url) { setNotFound(true); return; }
+        resolvedUrl.current = data.url;
+      }
+
+      if (!audioRef.current) {
+        audioRef.current = new Audio(resolvedUrl.current!);
+        audioRef.current.onended = () => setPlaying(false);
+        audioRef.current.onerror = () => { setPlaying(false); setNotFound(true); };
+      }
+
+      await audioRef.current.play();
+      setPlaying(true);
+    } catch {
+      setNotFound(true);
+    } finally {
+      setLoading(false);
+    }
+  }, [playing, notFound, scientificName]);
+
+  useEffect(() => () => { audioRef.current?.pause(); }, []);
+
+  return (
+    <button
+      onClick={toggle}
+      disabled={notFound}
+      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-slate-700 hover:bg-slate-600 text-slate-200 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+      title={notFound ? "No recording found" : "Play reference recording (iNaturalist)"}
+    >
+      {loading ? (
+        <span className="inline-block w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
+      ) : playing ? (
+        <StopIcon />
+      ) : (
+        <span>🎵</span>
+      )}
+      <span>{notFound ? "unavailable" : playing ? "stop" : "reference"}</span>
+    </button>
+  );
+}
+
 // When: 2026-11-23 | By: claude-sonnet-4-6 | What: single bird detection card with play controls
 function BirdCard({
   detection,
@@ -122,8 +188,6 @@ function BirdCard({
   featured?: boolean;
 }) {
   const detClip = clipUrl(detection);
-
-  const xenoUrl = `https://xeno-canto.org/explore?query=${encodeURIComponent(detection.scientificName)}`;
 
   const time = detection.timestamp
     ? new Date(detection.timestamp).toLocaleTimeString([], {
@@ -178,15 +242,7 @@ function BirdCard({
         {detClip && (
           <AudioButton url={detClip} label="play detection" variant="primary" />
         )}
-        <a
-          href={xenoUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-slate-700 hover:bg-slate-600 text-slate-200 transition-colors"
-        >
-          <span>🎵</span>
-          reference song
-        </a>
+        <RefAudioButton scientificName={detection.scientificName} />
       </div>
     </div>
   );
@@ -207,7 +263,15 @@ export default function Home() {
         setError(data.error ?? `HTTP ${res.status}`);
         return;
       }
-      const data: Detection[] = await res.json();
+      const raw: Detection[] = await res.json();
+      // Keep one detection per species per calendar day (most recent first from API)
+      const seen = new Set<string>();
+      const data = raw.filter((d) => {
+        const key = `${d.date}\0${d.scientificName}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
       setDetections(data);
       setError(null);
       setLastUpdate(new Date());
@@ -300,12 +364,12 @@ export default function Home() {
       <div className="mt-12 text-center text-slate-600 text-xs">
         Auto-refreshes every 30 s · Reference songs from{" "}
         <a
-          href="https://xeno-canto.org"
+          href="https://www.inaturalist.org"
           target="_blank"
           rel="noopener noreferrer"
           className="underline hover:text-slate-400"
         >
-          xeno-canto.org
+          iNaturalist
         </a>
       </div>
     </main>
