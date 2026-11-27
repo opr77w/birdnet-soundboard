@@ -2,6 +2,7 @@
 "use client";
 
 import { useEffect, useState, useRef, useCallback } from "react";
+import Link from "next/link";
 
 interface Detection {
   id: number;
@@ -304,13 +305,21 @@ export default function Home() {
           </p>
         </div>
         <div className="flex flex-col items-end gap-1">
-          <button
-            onClick={fetchDetections}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-slate-700 hover:bg-slate-600 text-slate-200 transition-colors"
-          >
-            <RefreshIcon />
-            refresh
-          </button>
+          <div className="flex gap-2">
+            <Link
+              href="/crosscheck"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-slate-700 hover:bg-slate-600 text-slate-200 transition-colors"
+            >
+              🔍 cross-check
+            </Link>
+            <button
+              onClick={fetchDetections}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium bg-slate-700 hover:bg-slate-600 text-slate-200 transition-colors"
+            >
+              <RefreshIcon />
+              refresh
+            </button>
+          </div>
           {lastUpdate && (
             <span className="text-slate-500 text-xs">
               updated {lastUpdate.toLocaleTimeString()}

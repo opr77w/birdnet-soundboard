@@ -21,6 +21,9 @@ docker run -d \
   -e BIRDNET_BASE_URL=http://localhost:8080 \
   -e BIRDNET_CLIPS_DIR=/clips \
   ${XENOCANTO_API_KEY:+-e XENOCANTO_API_KEY="$XENOCANTO_API_KEY"} \
+  ${BIRDWEATHER_TOKEN:+-e BIRDWEATHER_TOKEN="$BIRDWEATHER_TOKEN"} \
+  ${BIRDNET_LAT:+-e BIRDNET_LAT="$BIRDNET_LAT"} \
+  ${BIRDNET_LON:+-e BIRDNET_LON="$BIRDNET_LON"} \
   birdnet-soundboard
 
 echo "Done. Soundboard running at http://$(hostname -I | awk '{print $1}'):3000"
