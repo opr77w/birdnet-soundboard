@@ -4,6 +4,10 @@ set -euo pipefail
 
 cd "$(dirname "$0")"
 
+# Load secrets if present (exports all vars to subshells)
+SECRETS=/home/pi/.secrets/soundboard.env
+if [[ -f "$SECRETS" ]]; then set -a; source "$SECRETS"; set +a; fi
+
 echo "Pulling latest..."
 git pull
 
